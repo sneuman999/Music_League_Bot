@@ -18,7 +18,7 @@ async function checkLink(){
     // - a visible browser (`headless: false` - easier to debug because you'll see the browser in action)
     // - no default viewport (`defaultViewport: null` - website page will in full width and height)
     const browser = await puppeteer.launch({
-        headless: true,
+        headless: false,
         defaultViewport: null,
     });
 
@@ -38,7 +38,8 @@ async function checkLink(){
     //});
 
     //logins into spotify
-    await page.click('body > div > div > div > div > div > div.row.mt-3 > div > div > a');
+    //return;
+    await page.click('body > div.container.my-5 > div > div:nth-child(3) > div > a');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
     await page.type("#login-username", username);
@@ -50,7 +51,7 @@ async function checkLink(){
 
 
     //finds the current playlist link
-    await page.click('#encore-web-main-content > div > main > section > div > div > div:nth-child(4) > button');
+    await page.click('#encore-web-main-content > div > main > section > div > div > div:nth-child(5) > button');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
     const oldLink = fs.readFileSync('link.txt', 'utf8', (err, data) => {
@@ -59,28 +60,27 @@ async function checkLink(){
     });
 
     //console.log(oldLink);
-
-    const link = await page.$eval('#app > div:nth-child(3) > div.py-5 > div > div > div > div:nth-child(1) > div > div > div.row.py-3.align-items-center > div:nth-child(1) > a', element => element.getAttribute('href'));
-    const weekName = await page.$eval('#app > div:nth-child(3) > div.py-5 > div > div > div > div:nth-child(1) > div > div > div:nth-child(1) > div > h5', element => element.innerText);
-    let weekTag = await page.$eval('#app > div:nth-child(3) > div.py-5 > div > div > div > div:nth-child(1) > div > div > div.row.py-3.align-items-center > div:nth-child(2) > a', element => element.getAttribute('href'));
+    const playlistLink = await page.$eval('body > div:nth-child(1) > div.container.my-5 > div > div > div > div > div > div > div.row.my-3.justify-content-center > div:nth-child(1) > a', element => element.getAttribute('href'));
+    const weekName = await page.$eval('body > div:nth-child(1) > div.container.my-5 > div > div > div > div > div > div > div:nth-child(1) > div.col > h5', element => element.innerText);
+    let submitTag = await page.$eval('body > div:nth-child(1) > div.container.my-5 > div > div > div > div > div > div > div.row.my-3.justify-content-center > div > a', element => element.getAttribute('href'));
     let frontTag = "https://app.musicleague.com"
-    let weekLink = frontTag.concat(weekTag);
-    const leagueName = await page.$eval('#app > div:nth-child(3) > div.container > div.row.leagueHeader.my-5 > div > div > div.col-12.col-lg-8.gx-0 > div.row.p-3.gx-0 > div > h3', element => element.innerText);
-    console.log("playlist link is " + link);
+    let submitLink = frontTag.concat(submitTag);
+    const leagueName = await page.$eval('body > div:nth-child(1) > div.bg-body > div > div > div > div.d-none.d-sm-block > div > div > div.col-9 > div.card-body.p-3 > div:nth-child(1) > div.col > h4 > a', element => element.innerText);
+    console.log("playlist link is " + playlistLink);
     console.log("weekName is " + weekName);
-    console.log("weekLink is " + weekLink);
+    console.log("weekLink is " + submitLink);
     console.log("leagueName is " + leagueName);
-    fs.writeFileSync('link.txt', link);
+    fs.writeFileSync('link.txt', playlistLink);
 
     const channel = client.channels.cache.get('1049795501400264765');
 
-    if (!(oldLink == link)) {
+    if (!(oldLink == playlistLink)) {
         //send discord message
         if (link == "") {
-            channel.send("'" + weekName + "' on " + leagueName + " is now open for submissions!\n" + weekLink);
+            channel.send("'" + weekName + "' on " + leagueName + " is now open for submissions!\n" + submitLink);
         }
         else {
-            channel.send("Check out the '" + weekName + "' playlist on " + leagueName + "!\n" + link);
+            channel.send("Check out the '" + weekName + "' playlist on " + leagueName + "!\n" + playlistLink);
         }
     }
     else {
@@ -94,8 +94,8 @@ client.on('ready', async () => {
     await checkLink();
 });
 
-cron.schedule('* * * * *', async () => {
-    await checkLink();
-});
+//cron.schedule('* * * * *', async () => {
+    //await checkLink();
+//});
 
 client.login(token);
